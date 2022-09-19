@@ -1,4 +1,4 @@
-# FaceReconition
+# Face Recognition
 
 ## Dependencies
 
