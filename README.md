@@ -29,7 +29,7 @@
 3. have a snapshot result at `${MobileFaceNet_TF_ROOT}/output`.
 
 ## Note
-Create folder img and embedding_pkl to contain image and embeddings
+Create folder embeddings to contain embeddings
 ## Create embeddings  
 python3 create_ctf.py -n name
 ## Recognize face
