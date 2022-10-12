@@ -93,7 +93,7 @@ def main(args):
                                         1, (0,255,0), 1, cv2.LINE_AA) 
 				
                 faces = []
-                for box in dets:
+                for i, box in enumerate(dets):
                     (x1, y1, x2, y2) = (int(box[i]) for i in range(4))
                     x, y, w, h = x1, y1, x2 - x1, y2 - y1
                     faces.append([x, y, w, h])
@@ -111,7 +111,6 @@ def main(args):
 		maximum = 0 
                 for i, em in enumerate(emb_array):
                     em = em.flatten()
-
                     for emb in all_embed:
                         with open(emb, 'rb') as f:
                             embed = pickle.load(f)
@@ -124,16 +123,16 @@ def main(args):
                             maximum = sim 
                             p = name
 						
-		if maximum > args.threshold:
+		    if maximum > args.threshold:
 			person = p
-		else: 
+		    else: 
 			person = 'unknown'
-                    
-		x, y, w, h = faces[i]
-	    	cv2.rectangle(frame, (x, y), (x+w, y+h), (2, 255, 0), 2)
-	    	cv2.putText(frame, str(person), (int(x+w/50), int(y+h+20)), cv2.FONT_HERSHEY_SIMPLEX, 
-				0.5, (0, 255, 0), 1, cv2.LINE_AA)
-						
+
+		    x, y, w, h = faces[i]
+		    cv2.rectangle(frame, (x, y), (x+w, y+h), (2, 255, 0), 2)
+		    cv2.putText(frame, str(person), (int(x+w/50), int(y+h+20)), cv2.FONT_HERSHEY_SIMPLEX, 
+						0.5, (0, 255, 0), 1, cv2.LINE_AA)	
+		
             cv2.imshow("My Capture", frame)
 	    if cv2.waitKey(1)&0xFF == ord('q'):
 		break
