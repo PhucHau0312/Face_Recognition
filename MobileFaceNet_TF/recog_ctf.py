@@ -7,7 +7,6 @@ import re
 import sys
 import argparse 
 import glob 
-from pathlib import Path
 from CenterFace.prj_python.centerface import CenterFace
 
 
@@ -61,17 +60,16 @@ def parse_arguments(argv):
     parser.add_argument('--model', type=str,
                         help='Could be either a directory containing the meta_file and ckpt_file or a model protobuf (.pb) file',
                         default='./arch/pretrained_model')
-    parser.add_argument('--image_size', default=[1, 112, 112, 3], help='the image size')
-    parser.add_argument('--embedding_size', default=[192, 1], help='the embedding size')
+	parser.add_argument('--emb_path', default='/home/hau/Desktop/FaceRecognition/MobileFaceNet_TF/embedding_pkl/', help='the embeddings path')
+    parser.add_argument('--image_size', default=[112, 112], help='the image size')
+	parser.add_argument('--threshold', default=0.8, help='the threshold')
     return parser.parse_args(argv)
 
 
 def main(args):
-    data_path = '/home/hau/Desktop/FaceRecognition/MobileFaceNet_TF/embedding_pkl/'
-    all_embed = glob.glob(data_path + '*.pkl')
-    
+	
+    all_embed = glob.glob(args.emb_path + '*.pkl')
     cap = cv2.VideoCapture(0)
-
     cap.set(3,1280)
     cap.set(4,720)
     centerface = CenterFace()
@@ -82,74 +80,61 @@ def main(args):
         embedding = tf.get_default_graph().get_tensor_by_name("embeddings:0")
         
         while cap.isOpened():
-
-            isSuccess,frame = cap.read()
-            img = frame.copy()
+            success, frame = cap.read()
             hf, wf = frame.shape[:2]
 
-            if isSuccess:   
-                cv2.putText(frame,
-		                    'Press q to quit.....',
-		                    (400,50), 
-		                    cv2.FONT_HERSHEY_SIMPLEX, 
-		                    2,
-		                    (0,255,0),
-		                    3,
-		                    cv2.LINE_AA)
+            if success:   
+                try:
+                    dets, _ = centerface(frame, hf, wf, threshold=0.35)
+                    input_images = np.zeros((dets.shape[0], 112, 112, 3))
+                except:     
+                    cv2.putText(frame, 'No face detected', (400,50), cv2.FONT_HERSHEY_SIMPLEX, 
+                                        1, (0,255,0), 1, cv2.LINE_AA) 
+				
+                faces = []
+                for box in dets:
+                    (x1, y1, x2, y2) = (int(box[i]) for i in range(4))
+                    x, y, w, h = x1, y1, x2 - x1, y2 - y1
+                    faces.append([x, y, w, h])
+					
+                    face = frame[y:y+h, x:x+w] 
+                    face = (face - 127.5)*0.0078125
+                    face = cv2.resize(face, args.image_size)   
+                    input_images[i, :] = face 
 
-            dets, lms = centerface(frame, hf, wf, threshold=0.35)
-            bboxes = []
-            for box in dets:
-                (x1, y1, x2, y2) = (int(box[i]) for i in range(4))
-                bboxes.append([x1, y1, x2 - x1, y2 - y1])
-            
-            # for lm in lms:
-            #     for i in range(0, 5):
-            #         cv2.circle(frame, (int(lm[i * 2]), int(lm[i * 2 + 1])), 2, (0, 0, 255), -1)
-            
-            # if cv2.waitKey(1)&0xFF == ord('r'):
-            try:                    
-                for box in bboxes:
-                    print(box)
-                    [x, y, w, h] = box
-                    face = img[y:y+h, x:x+w]
-                    face = cv2.resize(face, [112, 112])   
-                    face = face.reshape(args.image_size)
+                feed_dict = {inputs: input_images}
+                emb_array = sess.run(embedding, feed_dict=feed_dict)
+                emb_array = sklearn.preprocessing.normalize(emb_array)
+                print(emb_array.shape)
+				
+				maximum = 0 
+                for i, em in enumerate(emb_array):
+                    em = em.flatten()
 
-                    feed_dict = {inputs: face}
-                    embed_box = sess.run(embedding, feed_dict=feed_dict)
-                    
-                    embed_box = np.array(embed_box).reshape([embed_box.shape[1]])
-                    print(embed_box.shape)
-                    
-                    minimum = 99 
-                    person = None 
                     for emb in all_embed:
                         with open(emb, 'rb') as f:
                             embed = pickle.load(f)
 
-                        name = emb[len(data_path):]
+                        name = emb[len(emb_path +'/'):]
                         name = name.split('.')[0]
-                        print(name)
-
-                        dist = np.linalg.norm(embed_box - embed)
-                        print(dist)
-                        
-                        if dist < minimum:
-                            minimum = dist
-                            person = name
-                            
-                    print(person)
-
+                        sim  = np.dot(em, embed.T)
+						
+						if sim > maximum:
+                            maximum = sim 
+                            p = name
+						
+					if maximum > args.threshold:
+						person = p
+					else: 
+						person = 'unknown'
+                    
+					x, y, w, h = faces[i]
                     cv2.rectangle(frame, (x, y), (x+w, y+h), (2, 255, 0), 2)
-
-                    cv2.putText(frame, str(person), (int(x+w/2-25), int(y-10)), cv2.FONT_HERSHEY_SIMPLEX, 
-                                        1, (0, 255, 0), 2, cv2.LINE_AA)                        
-            except:     
-                print('detect error') 
-                
+                    cv2.putText(frame, str(person), (int(x+w/50), int(y+h+20)), cv2.FONT_HERSHEY_SIMPLEX, 
+                                        0.5, (0, 255, 0), 1, cv2.LINE_AA)
+						
             cv2.imshow("My Capture", frame)
-            if cv2.waitKey(1)&0xFF == ord('q'):
+           	if cv2.waitKey(1)&0xFF == ord('q'):
                 break
         
     cap.release()
