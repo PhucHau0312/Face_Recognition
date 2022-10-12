@@ -60,11 +60,11 @@ def get_model_filenames(model_dir):
 def parse_arguments(argv):
 
     parser = argparse.ArgumentParser(description='take a picture')
-    parser.add_argument('--name','-n', default='unknown', type=str,help='input the name of the recording person')
+    parser.add_argument('--name','-n', type=str,help='input the name of the recording person')
     parser.add_argument('--model', type=str,
                         help='Could be either a directory containing the meta_file and ckpt_file or a model protobuf (.pb) file',
                         default='./arch/pretrained_model')
-	parser.add_argument('--emb_path', default='embeddings', help='the embeddings path')
+    parser.add_argument('--emb_path', default='embeddings', help='the embeddings path')
     parser.add_argument('--image_size', default=[112, 112], help='the image size')
     return parser.parse_args(argv)
 
@@ -87,42 +87,41 @@ def main(args):
             
             if success:   
                 cv2.putText(frame,
-		                    'Press t to take a picture,q to quit.....',
-		                    (10,100), 
-		                    cv2.FONT_HERSHEY_SIMPLEX, 
-		                    2,
-		                    (0,255,0),
-		                    3,
-		                    cv2.LINE_AA)
-			
+			    'Press t to take a picture,q to quit.....',
+			    (10,100), 
+			    cv2.FONT_HERSHEY_SIMPLEX, 
+			    2,
+			    (0,255,0),
+			    3,
+			    cv2.LINE_AA)
+
             if cv2.waitKey(1)&0xFF == ord('t'):
                 try:        
                     dets, _ = centerface(frame, hf, wf, threshold=0.35)
-				except:
+		except:
                     cv2.putText(frame, 'No face detected', (10,100), cv2.FONT_HERSHEY_SIMPLEX, 1,
                                                             (0,255,0), 1, cv2.LINE_AA)
-				for det in dets:
-                	box, _ = det[:4], det[4]
-					cv2.rectangle(frame, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (2, 255, 0), 1)
+		for det in dets:
+		    box, _ = det[:4], det[4]
+		    cv2.rectangle(frame, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (2, 255, 0), 1)
 					
-				(x1, y1, x2, y2) = (int(i) for i in box)
-				(x, y, w, h) = (x1, y1, x2 - x1, y2 - y1)
-				
-				face = frame[y:y+h, x:x+w]
-				cv2.imshow("My Face", face)
+		(x1, y1, x2, y2) = (int(i) for i in box)
+		(x, y, w, h) = (x1, y1, x2 - x1, y2 - y1)
+		face = frame[y:y+h, x:x+w]
+		cv2.imshow("My Face", face)
 
-				face = cv2.resize(np.array(face), args.image_size)                
-				face = (face - 127.5)*0.0078125
-				face = np.reshape(face, args.image_size)
+		face = cv2.resize(np.array(face), args.image_size)                
+		face = (face - 127.5)*0.0078125
+		face = np.reshape(face, args.image_size)
 
-				feed_dict = {inputs: face}
-				embed = sess.run(embedding, feed_dict=feed_dict)
-				embed = sklearn.preprocessing.normalize(embed)
-				embed = embed.flatten()
-				print(embed.shape)
+		feed_dict = {inputs: face}
+		embed = sess.run(embedding, feed_dict=feed_dict)
+		embed = sklearn.preprocessing.normalize(embed)
+		embed = embed.flatten()
+		print(embed.shape)
 				
-				with open(str(emb_path/('{}.pkl'.format(str(args.name)))), "wb") as f:
-                    pickle.dump(embed, f)
+		with open(str(emb_path/('{}.pkl'.format(str(args.name)))), "wb") as f:
+    		    pickle.dump(embed, f)
 					
             cv2.imshow("My Capture", frame)
             if cv2.waitKey(1)&0xFF == ord('q'):
