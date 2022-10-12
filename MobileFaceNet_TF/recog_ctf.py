@@ -120,23 +120,23 @@ def main(args):
                         name = name.split('.')[0]
                         sim  = np.dot(em, embed.T)
 						
-						if sim > maximum:
+			if sim > maximum:
                             maximum = sim 
                             p = name
 						
-					if maximum > args.threshold:
-						person = p
-					else: 
-						person = 'unknown'
+		if maximum > args.threshold:
+			person = p
+		else: 
+			person = 'unknown'
                     
-					x, y, w, h = faces[i]
-                    cv2.rectangle(frame, (x, y), (x+w, y+h), (2, 255, 0), 2)
-                    cv2.putText(frame, str(person), (int(x+w/50), int(y+h+20)), cv2.FONT_HERSHEY_SIMPLEX, 
-                                        0.5, (0, 255, 0), 1, cv2.LINE_AA)
+		x, y, w, h = faces[i]
+	    	cv2.rectangle(frame, (x, y), (x+w, y+h), (2, 255, 0), 2)
+	    	cv2.putText(frame, str(person), (int(x+w/50), int(y+h+20)), cv2.FONT_HERSHEY_SIMPLEX, 
+				0.5, (0, 255, 0), 1, cv2.LINE_AA)
 						
             cv2.imshow("My Capture", frame)
-           	if cv2.waitKey(1)&0xFF == ord('q'):
-                break
+	    if cv2.waitKey(1)&0xFF == ord('q'):
+		break
         
     cap.release()
     cv2.destroyAllWindows() 
