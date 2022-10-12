@@ -63,18 +63,14 @@ def parse_arguments(argv):
     parser.add_argument('--model', type=str,
                         help='Could be either a directory containing the meta_file and ckpt_file or a model protobuf (.pb) file',
                         default='./arch/pretrained_model')
-    parser.add_argument('--image_size', default=[1, 112, 112, 3], help='the image size')
+	parser.add_argument('--emb_path', default='embeddings', help='the embeddings path')
+    parser.add_argument('--image_size', default=[112, 112], help='the image size')
     return parser.parse_args(argv)
 
 def main(args):
 
-    data_path = Path('embedding_pkl')
-    img_path = Path('img')
-    os.makedirs(img_path/'{}'.format(str(args.name)), exist_ok = True)
-    name_path = Path(img_path/str(args.name))
-
+    emb_path = Path(args.emb_path)
     cap = cv2.VideoCapture(0)
-
     cap.set(3,1280)
     cap.set(4,720)
     centerface = CenterFace()
@@ -84,14 +80,11 @@ def main(args):
         inputs = tf.get_default_graph().get_tensor_by_name("input:0")
         embedding = tf.get_default_graph().get_tensor_by_name("embeddings:0")
 		
-        n = 0   
-        total_embed = np.zeros((192, ))
         while cap.isOpened():   
-            isSuccess,frame = cap.read()    
-            img = frame.copy()  
+            success,frame = cap.read()    
             hf, wf = frame.shape[:2]
             
-            if isSuccess:   
+            if success:   
                 cv2.putText(frame,
 		                    'Press t to take a picture,q to quit.....',
 		                    (10,100), 
@@ -102,44 +95,34 @@ def main(args):
 		                    cv2.LINE_AA)
 			
             if cv2.waitKey(1)&0xFF == ord('t'):
-                n += 1 
-                try:            
-                    dets, lms = centerface(frame, hf, wf, threshold=0.35)
-                    for det in dets:
-                        boxes, _ = det[:4], det[4]
-                        cv2.rectangle(frame, (int(boxes[0]), int(boxes[1])), (int(boxes[2]), int(boxes[3])), (2, 255, 0), 1)
-                    
-                    for lm in lms:
-                        for i in range(0, 5):
-                            cv2.circle(frame, (int(lm[i * 2]), int(lm[i * 2 + 1])), 2, (0, 0, 255), -1)
-		            
-                    (x1, y1, x2, y2) = (int(i) for i in boxes)
-                    (x, y, w, h) = (x1, y1, x2 - x1, y2 - y1)
-                    
-                    warped_face = img[y:y+h, x:x+w]
-                    warped_face = cv2.resize(warped_face, [112, 112])
-                    cv2.imwrite(str(name_path/('{}.jpg'.format(n))), warped_face)
-                    
-                    face = np.reshape(warped_face, args.image_size)
-
-                    feed_dict = {inputs: face}
-                    embed = sess.run(embedding, feed_dict=feed_dict)
+                try:        
+                    dets, _ = centerface(frame, hf, wf, threshold=0.35)
+				except:
+                    cv2.putText(frame, 'No face detected', (10,100), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                                                            (0,255,0), 1, cv2.LINE_AA)
+				for det in dets:
+                	box, _ = det[:4], det[4]
+					cv2.rectangle(frame, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (2, 255, 0), 1)
 					
-                    embed = np.array(embed).reshape([embed.shape[1]])
-                    
-                    total_embed += embed 
-                    print(total_embed.shape)
-                    
-                except:
-                    print('no face captured')    
+				(x1, y1, x2, y2) = (int(i) for i in box)
+				(x, y, w, h) = (x1, y1, x2 - x1, y2 - y1)
 				
-            if n >= 5:
-                avr_embed = total_embed/n 
-                print(avr_embed.shape)
-                with open(str(data_path/('{}.pkl'.format(str(args.name)))), "wb") as f:
-                    pickle.dump(avr_embed, f)
-                break
-            
+				face = frame[y:y+h, x:x+w]
+				cv2.imshow("My Face", face)
+
+				face = cv2.resize(np.array(face), args.image_size)                
+				face = (face - 127.5)*0.0078125
+				face = np.reshape(face, args.image_size)
+
+				feed_dict = {inputs: face}
+				embed = sess.run(embedding, feed_dict=feed_dict)
+				embed = sklearn.preprocessing.normalize(embed)
+				embed = embed.flatten()
+				print(embed.shape)
+				
+				with open(str(emb_path/('{}.pkl'.format(str(args.name)))), "wb") as f:
+                    pickle.dump(embed, f)
+					
             cv2.imshow("My Capture", frame)
             if cv2.waitKey(1)&0xFF == ord('q'):
                 break
