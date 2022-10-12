@@ -6,7 +6,8 @@ import os
 import re 
 import sys
 import argparse 
-import glob 
+import glob
+import sklearn.preprocessing
 from CenterFace.prj_python.centerface import CenterFace
 
 
@@ -60,7 +61,7 @@ def parse_arguments(argv):
     parser.add_argument('--model', type=str,
                         help='Could be either a directory containing the meta_file and ckpt_file or a model protobuf (.pb) file',
                         default='./arch/pretrained_model')
-	parser.add_argument('--emb_path', default='/home/hau/Desktop/FaceRecognition/MobileFaceNet_TF/embedding_pkl/', help='the embeddings path')
+	parser.add_argument('--emb_path', default='/home/hau/Desktop/FaceRecognition/MobileFaceNet_TF/embeddings/', help='the embeddings path')
     parser.add_argument('--image_size', default=[112, 112], help='the image size')
 	parser.add_argument('--threshold', default=0.8, help='the threshold')
     return parser.parse_args(argv)
