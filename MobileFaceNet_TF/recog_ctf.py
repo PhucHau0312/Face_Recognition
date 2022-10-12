@@ -108,7 +108,7 @@ def main(args):
                 emb_array = sklearn.preprocessing.normalize(emb_array)
                 print(emb_array.shape)
 				
-				maximum = 0 
+		maximum = 0 
                 for i, em in enumerate(emb_array):
                     em = em.flatten()
 
