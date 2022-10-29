@@ -115,7 +115,7 @@ def main(args):
                         with open(emb, 'rb') as f:
                             embed = pickle.load(f)
 
-                        name = emb[len(emb_path +'/'):]
+                        name = emb[len(emb_path):]
                         name = name.split('.')[0]
                         sim  = np.dot(em, embed.T)
 						
