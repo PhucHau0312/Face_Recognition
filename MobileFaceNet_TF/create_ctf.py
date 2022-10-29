@@ -71,6 +71,7 @@ def parse_arguments(argv):
 def main(args):
 
     emb_path = Path(args.emb_path)
+    print(emb_path)
     cap = cv2.VideoCapture(0)
     cap.set(3,1280)
     cap.set(4,720)
@@ -98,30 +99,30 @@ def main(args):
             if cv2.waitKey(1)&0xFF == ord('t'):
                 try:        
                     dets, _ = centerface(frame, hf, wf, threshold=0.35)
-		except:
-                    cv2.putText(frame, 'No face detected', (10,100), cv2.FONT_HERSHEY_SIMPLEX, 1,
-                                                            (0,255,0), 1, cv2.LINE_AA)
-		for det in dets:
-		    box, _ = det[:4], det[4]
-		    cv2.rectangle(frame, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (2, 255, 0), 1)
-					
-		(x1, y1, x2, y2) = (int(i) for i in box)
-		(x, y, w, h) = (x1, y1, x2 - x1, y2 - y1)
-		face = frame[y:y+h, x:x+w]
-		cv2.imshow("My Face", face)
+                except:
+                            cv2.putText(frame, 'No face detected', (10,100), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                                                                    (0,255,0), 1, cv2.LINE_AA)
+                for det in dets:
+                    box, _ = det[:4], det[4]
+                    cv2.rectangle(frame, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (2, 255, 0), 1)
+                            
+                (x1, y1, x2, y2) = (int(i) for i in box)
+                (x, y, w, h) = (x1, y1, x2 - x1, y2 - y1)
+                face = frame[y:y+h, x:x+w]
+                cv2.imshow("My Face", face)
 
-		face = cv2.resize(np.array(face), args.image_size)                
-		face = (face - 127.5)*0.0078125
-		face = np.reshape(face, args.image_size)
+                face = cv2.resize(np.array(face), args.image_size)                
+                face = (face - 127.5)*0.0078125
+                face = np.expand_dims(face, 0)
 
-		feed_dict = {inputs: face}
-		embed = sess.run(embedding, feed_dict=feed_dict)
-		embed = sklearn.preprocessing.normalize(embed)
-		embed = embed.flatten()
-		print(embed.shape)
-				
-		with open(str(emb_path/('{}.pkl'.format(str(args.name)))), "wb") as f:
-    		    pickle.dump(embed, f)
+                feed_dict = {inputs: face}
+                embed = sess.run(embedding, feed_dict=feed_dict)
+                embed = sklearn.preprocessing.normalize(embed)
+                embed = embed.flatten()
+                print(embed.shape)
+                        
+                with open(str(emb_path/('{}.pkl'.format(str(args.name)))), "wb") as f:
+                        pickle.dump(embed, f)
 					
             cv2.imshow("My Capture", frame)
             if cv2.waitKey(1)&0xFF == ord('q'):
