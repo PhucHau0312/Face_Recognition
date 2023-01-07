@@ -68,8 +68,8 @@ def parse_arguments(argv):
 
 
 def main(args):
-	
-    all_embed = glob.glob(args.emb_path + '*.pkl')
+	emb_path = args.emb_path
+    all_embed = glob.glob(emb_path + '*.pkl')
     cap = cv2.VideoCapture(0)
     cap.set(3,1280)
     cap.set(4,720)
