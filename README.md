@@ -1,5 +1,10 @@
 # Face Recognition
 
+## Summary 
+
+1. [MobileFaceNets: Efficient CNNs for Accurate Real-Time Face Verification on Mobile Devices](https://arxiv.org/abs/1804.07573)
+2. [CenterFace: Joint Face Detection and Alignment Using Face as Point](https://arxiv.org/abs/1911.03599)
+
 ## Dependencies
 
 - tensorflow >= r1.5
@@ -28,19 +33,19 @@
 `${MobileFaceNet_TF_ROOT}/train_nets.py`
 3. have a snapshot result at `${MobileFaceNet_TF_ROOT}/output`.
 
-## Note
+## Testing
+
 Create folder embeddings to contain embeddings
-## Create embeddings  
+### Create embeddings  
 python3 create_ctf.py -n name
-## Recognize face
+### Recognize face
 python3 recog_ctf.py
 
 ## References
 
 1. [MobileFaceNet_TF](https://github.com/sirius-ai/MobileFaceNet_TF)
 2. [CenterFace](https://github.com/Star-Clouds/CenterFace)
-3. [MobileFaceNets: Efficient CNNs for Accurate Real-Time Face Verification on Mobile Devices](https://arxiv.org/abs/1804.07573)
-4. [CenterFace: Joint Face Detection and Alignment Using Face as Point](https://arxiv.org/abs/1911.03599)
+
 
 
 
